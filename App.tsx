@@ -1,13 +1,14 @@
-import { ScreenContent } from 'components/ScreenContent';
 import { StatusBar } from 'expo-status-bar';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { VideoPicker } from './components/VideoPicker';
 
 import './global.css';
 
 export default function App() {
   return (
-    <>
-      <ScreenContent title="Home" path="App.tsx"></ScreenContent>
+    <SafeAreaProvider>
       <StatusBar style="auto" />
-    </>
+      <VideoPicker />
+    </SafeAreaProvider>
   );
 }

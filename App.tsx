@@ -1,14 +1,16 @@
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { VideoPicker } from './components/VideoPicker';
-
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { VideoPage } from './src/video';
 import './global.css';
 
 export default function App() {
   return (
-    <SafeAreaProvider>
-      <StatusBar style="auto" />
-      <VideoPicker />
-    </SafeAreaProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <SafeAreaProvider>
+        <StatusBar style="auto" />
+        <VideoPage />
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
   );
 }

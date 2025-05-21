@@ -1,32 +1,36 @@
 import { useState, useEffect, useCallback } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { VideoMetadata } from '../types/video';
+import { Video } from '../types/video';
 import { STORAGE_KEYS } from '../constants/storage';
 
 export interface UsePersistedVideoReturn {
-  video: VideoMetadata | null;
-  updateVideo: (metadata: VideoMetadata) => Promise<void>;
+  video: Video | null;
+  updateVideo: (video: Video) => Promise<void>;
   clearVideo: () => Promise<void>;
+  updateTitle: (title: string) => void;
+  updateDescription: (description: string) => void;
+  saveDetails: () => Promise<void>;
   isLoading: boolean;
 }
 
 export const usePersistedVideo = (): UsePersistedVideoReturn => {
-  const [video, setVideo] = useState<VideoMetadata | null>(null);
+  const [video, setVideo] = useState<Video | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   useEffect(() => {
     const loadVideo = async () => {
       setIsLoading(true);
       try {
-        const savedMetadata = await AsyncStorage.getItem(STORAGE_KEYS.VIDEO_METADATA);
-        if (savedMetadata) {
-          setVideo(JSON.parse(savedMetadata));
+        const savedVideoData = await AsyncStorage.getItem(STORAGE_KEYS.VIDEO_DATA);
+        if (savedVideoData) {
+          const parsedVideoData = JSON.parse(savedVideoData) as Video;
+          setVideo(parsedVideoData);
         } else {
-          setVideo(null); // Ensure video is null if nothing is in storage
+          setVideo(null);
         }
       } catch (error) {
         console.error('Error loading persisted video:', error);
-        setVideo(null); // Set to null on error
+        setVideo(null);
       } finally {
         setIsLoading(false);
       }
@@ -34,25 +38,62 @@ export const usePersistedVideo = (): UsePersistedVideoReturn => {
     loadVideo();
   }, []);
 
-  const updateVideo = useCallback(async (metadata: VideoMetadata) => {
+  const updateVideo = useCallback(async (video: Video) => {
     try {
-      await AsyncStorage.setItem(STORAGE_KEYS.VIDEO_METADATA, JSON.stringify(metadata));
-      setVideo(metadata);
+      // When a new video is picked, its title/description might be empty initially
+      // or come from the metadata directly.
+      const newTitle = video.metadata?.title !== undefined ? video.metadata?.title : '';
+      const newDescription =
+        video.metadata?.description !== undefined ? video.metadata?.description : '';
+      const fullVideoData = {
+        ...video,
+        metadata: { ...video.metadata, title: newTitle, description: newDescription },
+      };
+
+      await AsyncStorage.setItem(STORAGE_KEYS.VIDEO_DATA, JSON.stringify(fullVideoData));
+      setVideo(fullVideoData);
     } catch (error) {
       console.error('Error saving video metadata:', error);
-      // Optionally, re-throw or handle error state if needed by the component
     }
   }, []);
+
+  const updateTitle = useCallback((title: string) => {
+    setVideo({ ...video, metadata: { ...video?.metadata, title } });
+  }, []);
+
+  const updateDescription = useCallback((description: string) => {
+    setVideo({ ...video, metadata: { ...video?.metadata, description } });
+  }, []);
+
+  const saveDetails = useCallback(async () => {
+    if (!video) return;
+    const updatedVideo: Video = {
+      ...video,
+    };
+    try {
+      await AsyncStorage.setItem(STORAGE_KEYS.VIDEO_DATA, JSON.stringify(updatedVideo));
+      setVideo(updatedVideo); // Update the video state as well
+    } catch (error) {
+      console.error('Error saving video details:', error);
+    }
+  }, [video]);
 
   const clearVideo = useCallback(async () => {
     try {
-      await AsyncStorage.removeItem(STORAGE_KEYS.VIDEO_METADATA);
+      await AsyncStorage.removeItem(STORAGE_KEYS.VIDEO_DATA);
       setVideo(null);
     } catch (error) {
       console.error('Error clearing video metadata:', error);
-      // Optionally, re-throw or handle error state
     }
   }, []);
 
-  return { video, updateVideo, clearVideo, isLoading };
+  return {
+    video,
+    updateVideo,
+    clearVideo,
+    updateTitle,
+    updateDescription,
+    saveDetails,
+    isLoading,
+  };
 };

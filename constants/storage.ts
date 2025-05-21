@@ -1,3 +1,3 @@
 export const STORAGE_KEYS = {
-  VIDEO_METADATA: '@video_metadata',
-} as const; 
+  VIDEO_DATA: '@video_data',
+} as const;

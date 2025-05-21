@@ -1,19 +1,19 @@
 import { useCallback } from 'react';
-import { View, Text, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, TouchableOpacity, Alert } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
 
-import { VideoMetadata } from '../../types/video';
 import {
   FILE_SIZE_LIMIT_BYTES,
   VIDEO_MAX_DURATION_SECONDS,
   ERROR_MESSAGES,
-} from '../../constants/video';
-import { usePersistedVideo } from '../../hooks/usePersistedVideo';
+} from '@constants/video';
 
-export function VideoPicker() {
-  const { updateVideo } = usePersistedVideo();
+interface VideoPickerProps {
+  onVideoSelected: (asset: ImagePicker.ImagePickerAsset) => void;
+}
 
+export function VideoPicker({ onVideoSelected }: VideoPickerProps) {
   const handlePermissionDenied = useCallback(() => {
     Alert.alert('Permission Required', ERROR_MESSAGES.PERMISSION_DENIED, [
       { text: 'Cancel', style: 'cancel' },
@@ -43,34 +43,27 @@ export function VideoPicker() {
           Alert.alert('File Too Large', ERROR_MESSAGES.FILE_TOO_LARGE);
           return;
         }
-        const metadata: VideoMetadata = {
-          fileName: selectedVideo.fileName || undefined,
-          fileSize: selectedVideo.fileSize || undefined,
-          duration: selectedVideo.duration || undefined,
-          title: '',
-          description: '',
-        };
-        await updateVideo({
-          uri: selectedVideo.uri,
-          metadata: metadata,
-        });
+        onVideoSelected(selectedVideo);
       }
     } catch (error) {
       console.error('Video picker error:', error);
       Alert.alert('Error', ERROR_MESSAGES.PICKER_ERROR);
     }
-  }, [handlePermissionDenied, updateVideo]);
+  }, [handlePermissionDenied, onVideoSelected]);
 
   return (
-    <View className="flex-1 bg-black">
-      <View className="flex-1 items-center justify-center p-5">
-        <TouchableOpacity
-          onPress={pickVideo}
-          className="flex-row items-center justify-center rounded-lg bg-blue-500 px-5 py-3 shadow-md">
-          <Ionicons name="film-outline" size={24} color="white" style={{ marginRight: 8 }} />
-          <Text className="text-center text-base font-bold text-white">Select Video</Text>
-        </TouchableOpacity>
-      </View>
+    <View className="flex-1 items-center justify-center bg-gray-900 p-6">
+      <Text className="mb-8 text-center text-3xl font-bold text-white">Select a Video</Text>
+      <Text className="mb-10 text-center text-lg text-gray-400">
+        Tap the button below to choose a video from your library.
+      </Text>
+
+      <TouchableOpacity
+        onPress={pickVideo}
+        className="flex-row items-center justify-center rounded-lg bg-indigo-600 px-8 py-4 transition-all hover:bg-indigo-700 active:bg-indigo-800">
+        <Ionicons name="film-outline" size={28} color="white" style={{ marginRight: 12 }} />
+        <Text className="text-center text-xl font-semibold text-white">Choose Video</Text>
+      </TouchableOpacity>
     </View>
   );
 }

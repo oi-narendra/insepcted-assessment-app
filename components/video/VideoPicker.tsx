@@ -15,10 +15,23 @@ import { formatDuration, formatFileSize } from '@utils/formatters';
 
 import { FILE_SIZE_LIMIT_BYTES, ERROR_MESSAGES } from '@constants/video';
 
+/**
+ * Props for the `VideoPicker` component.
+ */
 interface VideoPickerProps {
+  /**
+   * Callback when video is picked & details submitted.
+   * @param asset The selected video asset from `expo-image-picker`.
+   * @param title The user-entered title for the video.
+   * @param description The user-entered description for the video.
+   */
   onVideoReady: (asset: ImagePicker.ImagePickerAsset, title: string, description: string) => void;
 }
 
+/**
+ * Component for selecting a video, inputting details, and handling permissions/errors.
+ * It manages two main states: initial picking state and detail submission state.
+ */
 export function VideoPicker({ onVideoReady }: VideoPickerProps) {
   const [selectedAsset, setSelectedAsset] = useState<ImagePicker.ImagePickerAsset | null>(null);
   const [title, setTitle] = useState('');
@@ -33,6 +46,10 @@ export function VideoPicker({ onVideoReady }: VideoPickerProps) {
     setPermissionError(null);
   };
 
+  /**
+   * Handles the scenario where media library permissions are denied.
+   * Sets a specific error message guiding the user to system settings.
+   */
   const handlePermissionDenied = useCallback(() => {
     clearErrors();
     setPermissionError(
@@ -40,25 +57,29 @@ export function VideoPicker({ onVideoReady }: VideoPickerProps) {
     );
   }, []);
 
+  /**
+   * Opens the media library, handles permissions, and validates the selected video.
+   */
   const pickVideo = useCallback(async () => {
     clearErrors();
     setSelectedAsset(null);
     setTitle('');
     setDescription('');
+
     try {
       const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (status !== 'granted') {
         handlePermissionDenied();
         return;
       }
+
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: 'videos',
+        mediaTypes: ImagePicker.MediaTypeOptions.Videos,
         quality: 1,
       });
 
       if (!result.canceled && result.assets && result.assets[0]) {
         const videoAsset = result.assets[0];
-
         if (videoAsset.fileSize && videoAsset.fileSize > FILE_SIZE_LIMIT_BYTES) {
           setError(ERROR_MESSAGES.FILE_TOO_LARGE);
           return;
@@ -71,6 +92,9 @@ export function VideoPicker({ onVideoReady }: VideoPickerProps) {
     }
   }, [handlePermissionDenied]);
 
+  /**
+   * Validates and submits the video details, then resets the component state.
+   */
   const handleSubmitDetails = () => {
     clearErrors();
     if (!selectedAsset) {
@@ -87,6 +111,7 @@ export function VideoPicker({ onVideoReady }: VideoPickerProps) {
     setDescription('');
   };
 
+  // Resets the selection and input fields.
   const handleCancelDetails = () => {
     clearErrors();
     setSelectedAsset(null);
@@ -94,6 +119,7 @@ export function VideoPicker({ onVideoReady }: VideoPickerProps) {
     setDescription('');
   };
 
+  // Initial state: Video selection prompt
   if (!selectedAsset) {
     return (
       <View className="flex-1 items-center justify-center bg-gray-900 p-6">
@@ -121,6 +147,7 @@ export function VideoPicker({ onVideoReady }: VideoPickerProps) {
     );
   }
 
+  // State after video selection: Detail submission form
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -133,13 +160,14 @@ export function VideoPicker({ onVideoReady }: VideoPickerProps) {
         <View className="p-6">
           <Text className="mb-6 text-center text-3xl font-bold text-white">Add Video Details</Text>
 
+          {/* Display metadata of the selected video */}
           <View className="mb-6 rounded-lg bg-gray-800 p-4">
             <Text className="mb-1 text-sm text-gray-400">
               File: {selectedAsset.fileName || 'N/A'}
             </Text>
             {selectedAsset.duration !== undefined && selectedAsset.duration !== null && (
               <Text className="mb-1 text-sm text-gray-400">
-                Duration: {formatDuration(selectedAsset.duration / 1000)}
+                Duration: {formatDuration(selectedAsset.duration / 1000)} {/* Convert ms to s */}
               </Text>
             )}
             {selectedAsset.fileSize !== undefined && (
@@ -157,7 +185,6 @@ export function VideoPicker({ onVideoReady }: VideoPickerProps) {
             onChangeText={setTitle}
             returnKeyType="next"
             onSubmitEditing={() => descriptionInputRef.current?.focus()}
-            blurOnSubmit={false}
           />
 
           <TextInput
@@ -174,12 +201,14 @@ export function VideoPicker({ onVideoReady }: VideoPickerProps) {
             returnKeyType="done"
           />
 
+          {/* Display general error if present */}
           {error && (
             <View className="mb-4 rounded-md bg-red-500 p-3">
               <Text className="text-center text-white">{error}</Text>
             </View>
           )}
 
+          {/* Button to submit video details */}
           <TouchableOpacity
             onPress={handleSubmitDetails}
             className={`mb-3 flex-row items-center justify-center rounded-lg bg-green-600 px-6 py-4 transition-all hover:bg-green-700 active:bg-green-800 ${Platform.OS === 'ios' ? 'shadow-md' : 'elevation-4'}`}>
@@ -192,6 +221,7 @@ export function VideoPicker({ onVideoReady }: VideoPickerProps) {
             <Text className="text-center text-lg font-semibold text-white">Save and Continue</Text>
           </TouchableOpacity>
 
+          {/* Button to cancel and re-pick a video */}
           <TouchableOpacity
             onPress={handleCancelDetails}
             className="flex-row items-center justify-center rounded-lg bg-gray-600 px-6 py-3 transition-all hover:bg-gray-700 active:bg-gray-800">

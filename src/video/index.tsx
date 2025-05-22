@@ -12,7 +12,6 @@ import { VideoView } from 'expo-video';
 import * as ImagePicker from 'expo-image-picker';
 import { useCallback } from 'react';
 import { VideoDetails } from '@components/video/VideoDetails';
-import { VideoProgressBar } from '@components/video/VideoProgressBar';
 
 export const VideoPage = () => {
   const { video, isLoading, updateVideo, clearVideo, player, loaded, loadVideo } =
@@ -26,7 +25,7 @@ export const VideoPage = () => {
     const metadata = {
       fileName: asset.fileName || undefined,
       fileSize: asset.fileSize || undefined,
-      duration: asset.duration ? asset.duration / 1000 : undefined,
+      duration: asset.duration ? asset.duration / 1000 : undefined, // Expo returns duration in ms
       title,
       description,
     };
@@ -37,25 +36,10 @@ export const VideoPage = () => {
     clearVideo();
   };
 
-  const onPlayPause = useCallback(async () => {
-    if (!video || !video.uri) return;
-
-    if (!loaded) {
-      const successfullyLoaded = await loadVideo();
-      if (successfullyLoaded) {
-        if (player) {
-          player.play();
-        }
-      }
-    } else {
-      if (player && player.playing) {
-        player.pause();
-      } else if (player) {
-        player.play();
-      }
-    }
-  }, [player, loaded, video, loadVideo]);
-
+  /**
+   * Initiates video playback when the placeholder is tapped.
+   * This occurs if a video is selected but not yet loaded into the player.
+   */
   const handlePlayFromPlaceholder = useCallback(async () => {
     if (video && video.uri && !loaded) {
       const successfullyLoaded = await loadVideo();
@@ -81,6 +65,7 @@ export const VideoPage = () => {
     <SafeAreaView className="flex-1 bg-black">
       <ScrollView className="flex-1" contentContainerStyle={{ flexGrow: 1 }}>
         <View className="aspect-video w-full bg-black">
+          {/* Display placeholder if video is selected but not yet loaded into the player. */}
           {video && !loaded ? (
             <TouchableOpacity onPress={handlePlayFromPlaceholder} activeOpacity={1}>
               <Image

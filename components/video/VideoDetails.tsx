@@ -9,7 +9,12 @@ interface VideoDetailsProps {
   onChangeVideo: () => void;
 }
 
+/**
+ * Displays video metadata (title, filename, duration, size) and a "Change Video" button.
+ * This component is typically overlaid on top of the video player.
+ */
 export function VideoDetails({ video, onChangeVideo }: VideoDetailsProps) {
+  // Render nothing if essential video data is missing.
   if (!video || !video.metadata) return null;
   const { title, duration, fileName, fileSize } = video.metadata;
 

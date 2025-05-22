@@ -7,7 +7,7 @@ export const formatFileSize = (bytes?: number): string => {
 
 /** Converts seconds to a string like "05:30". */
 export const formatDuration = (seconds?: number): string => {
-  if (!seconds) return 'Unknown duration';
+  if (seconds === undefined || seconds === null) return 'Unknown duration';
 
   const minutes = Math.floor(seconds / 60);
   const remainingSeconds = Math.floor(seconds % 60);

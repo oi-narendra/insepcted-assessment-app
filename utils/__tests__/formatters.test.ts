@@ -18,4 +18,4 @@ describe('formatDuration', () => {
     expect(formatDuration(3661)).toBe('61:01'); // 61 minutes 1 second
     expect(formatDuration(7200)).toBe('120:00'); // 120 minutes
   });
-}); 
+});

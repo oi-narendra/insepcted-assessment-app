@@ -1,7 +1,13 @@
-import { ActivityIndicator, SafeAreaView, ScrollView, View, Image } from 'react-native';
+import {
+  ActivityIndicator,
+  SafeAreaView,
+  ScrollView,
+  View,
+  Image,
+  TouchableOpacity,
+} from 'react-native';
 import { VideoPicker } from '@components/video/VideoPicker';
 import { usePersistedVideo } from '@hooks/usePersistedVideo';
-import { VideoControls } from '@components/video/VideoControls';
 import { VideoView } from 'expo-video';
 import * as ImagePicker from 'expo-image-picker';
 import { useCallback } from 'react';
@@ -50,6 +56,15 @@ export const VideoPage = () => {
     }
   }, [player, loaded, video, loadVideo]);
 
+  const handlePlayFromPlaceholder = useCallback(async () => {
+    if (video && video.uri && !loaded) {
+      const successfullyLoaded = await loadVideo();
+      if (successfullyLoaded && player) {
+        player.play();
+      }
+    }
+  }, [video, loaded, loadVideo, player]);
+
   if (isLoading) {
     return (
       <View className="flex-1 items-center justify-center bg-gray-900">
@@ -67,12 +82,13 @@ export const VideoPage = () => {
       <ScrollView className="flex-1" contentContainerStyle={{ flexGrow: 1 }}>
         <View className="aspect-video w-full bg-black">
           {video && !loaded ? (
-            <Image
-              source={require('@assets/video_placeholder.png')}
-              className="absolute inset-0"
-              style={{ width: '100%', height: '100%', alignSelf: 'center' }}
-              resizeMode="cover"
-            />
+            <TouchableOpacity onPress={handlePlayFromPlaceholder} activeOpacity={1}>
+              <Image
+                source={require('@assets/video_placeholder.png')}
+                style={{ width: '100%', height: '100%', backgroundColor: 'black' }}
+                resizeMode="contain"
+              />
+            </TouchableOpacity>
           ) : (
             <VideoView
               player={player}
@@ -82,9 +98,8 @@ export const VideoPage = () => {
             />
           )}
         </View>
-        <VideoDetails video={video} onChangeVideo={handleChangeVideo} />
-        <VideoProgressBar player={player} />
       </ScrollView>
+      <VideoDetails video={video} onChangeVideo={handleChangeVideo} />
     </SafeAreaView>
   );
 };

@@ -9,9 +9,10 @@
       "~/*": ["src/*"],
       "@components/*": ["components/*"],
       "@hooks/*": ["hooks/*"],
-      "@types/*": ["types/*"],
+      "@dataTypes/*": ["types/*"],
       "@utils/*": ["utils/*"],
-      "@constants/*": ["constants/*"]
+      "@constants/*": ["constants/*"],
+      "@assets/*": ["assets/*"]
     }
   }
 }

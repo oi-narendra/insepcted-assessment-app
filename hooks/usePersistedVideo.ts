@@ -2,9 +2,13 @@ import { useState, useEffect, useCallback } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Video } from '../types/video';
 import { STORAGE_KEYS } from '../constants/storage';
+import { useVideoPlayer, VideoPlayer as VideoPlayerType } from 'expo-video';
 
 export interface UsePersistedVideoReturn {
   video: Video | null;
+  player: VideoPlayerType;
+  loaded: boolean;
+  loadVideo: () => Promise<boolean>;
   updateVideo: (video: Video) => Promise<void>;
   clearVideo: () => Promise<void>;
   updateTitle: (title: string) => void;
@@ -16,10 +20,18 @@ export interface UsePersistedVideoReturn {
 export const usePersistedVideo = (): UsePersistedVideoReturn => {
   const [video, setVideo] = useState<Video | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [loaded, setLoaded] = useState<boolean>(false);
+
+  const player = useVideoPlayer(null, (p) => {
+    p.loop = true;
+    p.timeUpdateEventInterval = 0.25;
+  });
 
   useEffect(() => {
-    const loadVideo = async () => {
+    const loadInitialVideoFromStorage = async () => {
       setIsLoading(true);
+      setLoaded(false);
+      player.replaceAsync(null);
       try {
         const savedVideoData = await AsyncStorage.getItem(STORAGE_KEYS.VIDEO_DATA);
         if (savedVideoData) {
@@ -35,44 +47,72 @@ export const usePersistedVideo = (): UsePersistedVideoReturn => {
         setIsLoading(false);
       }
     };
-    loadVideo();
-  }, []);
+    loadInitialVideoFromStorage();
+  }, [player]);
 
-  const updateVideo = useCallback(async (video: Video) => {
-    try {
-      // When a new video is picked, its title/description might be empty initially
-      // or come from the metadata directly.
-      const newTitle = video.metadata?.title !== undefined ? video.metadata?.title : '';
-      const newDescription =
-        video.metadata?.description !== undefined ? video.metadata?.description : '';
-      const fullVideoData = {
-        ...video,
-        metadata: { ...video.metadata, title: newTitle, description: newDescription },
-      };
-
-      await AsyncStorage.setItem(STORAGE_KEYS.VIDEO_DATA, JSON.stringify(fullVideoData));
-      setVideo(fullVideoData);
-    } catch (error) {
-      console.error('Error saving video metadata:', error);
+  const loadVideo = useCallback(async (): Promise<boolean> => {
+    if (video && video.uri) {
+      try {
+        console.log('Attempting to load video into player:', video.uri);
+        await player.replaceAsync(video.uri);
+        setLoaded(true);
+        console.log('Video loaded into player successfully.');
+        return true;
+      } catch (error) {
+        console.error('Error loading video into player:', error);
+        setLoaded(false);
+        return false;
+      }
+    } else {
+      console.log('No video URI to load into player.');
+      setLoaded(false);
+      return false;
     }
-  }, []);
+  }, [video, player]);
+
+  const updateVideo = useCallback(
+    async (newVideoData: Video) => {
+      try {
+        const newTitle =
+          newVideoData.metadata?.title !== undefined ? newVideoData.metadata?.title : '';
+        const newDescription =
+          newVideoData.metadata?.description !== undefined
+            ? newVideoData.metadata?.description
+            : '';
+        const fullVideoData = {
+          ...newVideoData,
+          metadata: { ...newVideoData.metadata, title: newTitle, description: newDescription },
+        };
+
+        await AsyncStorage.setItem(STORAGE_KEYS.VIDEO_DATA, JSON.stringify(fullVideoData));
+        setVideo(fullVideoData);
+        setLoaded(false);
+        await player.replaceAsync(null);
+      } catch (error) {
+        console.error('Error saving video metadata:', error);
+      }
+    },
+    [player]
+  );
 
   const updateTitle = useCallback((title: string) => {
-    setVideo({ ...video, metadata: { ...video?.metadata, title } });
+    setVideo((prevVideo) => {
+      if (!prevVideo) return null;
+      return { ...prevVideo, metadata: { ...prevVideo.metadata, title } };
+    });
   }, []);
 
   const updateDescription = useCallback((description: string) => {
-    setVideo({ ...video, metadata: { ...video?.metadata, description } });
+    setVideo((prevVideo) => {
+      if (!prevVideo) return null;
+      return { ...prevVideo, metadata: { ...prevVideo.metadata, description } };
+    });
   }, []);
 
   const saveDetails = useCallback(async () => {
     if (!video) return;
-    const updatedVideo: Video = {
-      ...video,
-    };
     try {
-      await AsyncStorage.setItem(STORAGE_KEYS.VIDEO_DATA, JSON.stringify(updatedVideo));
-      setVideo(updatedVideo); // Update the video state as well
+      await AsyncStorage.setItem(STORAGE_KEYS.VIDEO_DATA, JSON.stringify(video));
     } catch (error) {
       console.error('Error saving video details:', error);
     }
@@ -82,13 +122,18 @@ export const usePersistedVideo = (): UsePersistedVideoReturn => {
     try {
       await AsyncStorage.removeItem(STORAGE_KEYS.VIDEO_DATA);
       setVideo(null);
+      setLoaded(false);
+      await player.replaceAsync(null);
     } catch (error) {
       console.error('Error clearing video metadata:', error);
     }
-  }, []);
+  }, [player]);
 
   return {
     video,
+    player,
+    loaded,
+    loadVideo,
     updateVideo,
     clearVideo,
     updateTitle,

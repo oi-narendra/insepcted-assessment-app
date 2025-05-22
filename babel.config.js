@@ -11,9 +11,10 @@ module.exports = function (api) {
       alias: {
         '@components': './components',
         '@hooks': './hooks',
-        '@types': './types',
+        '@dataTypes': './types',
         '@utils': './utils',
         '@constants': './constants',
+        '@assets': './assets',
       },
     },
   ]);

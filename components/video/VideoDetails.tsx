@@ -1,7 +1,7 @@
-import { View, Text, TouchableOpacity } from 'react-native';
+import { View, Text, TouchableOpacity, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { formatDuration, formatFileSize } from '../../utils/formatters';
-import { Video } from '../../types/video';
+import { formatDuration, formatFileSize } from '@utils/formatters';
+import { Video } from '@dataTypes/video';
 
 interface VideoDetailsProps {
   video: Video;
@@ -39,7 +39,8 @@ export function VideoDetails({ video, onChangeVideo }: VideoDetailsProps) {
         )}
         <TouchableOpacity
           onPress={onChangeVideo}
-          className="flex-row items-center rounded-md bg-blue-500/80 px-3 py-1.5 shadow-sm hover:bg-blue-600 active:bg-blue-700">
+          className={`flex-row items-center rounded-md bg-blue-500/80 px-3 py-1.5 hover:bg-blue-600 active:bg-blue-700 ${Platform.OS === 'ios' ? 'shadow-sm' : 'elevation-1'}`}
+          >
           <Ionicons name="refresh-outline" size={16} color="white" style={{ marginRight: 6 }} />
           <Text className="text-sm font-medium text-white">Change Video</Text>
         </TouchableOpacity>

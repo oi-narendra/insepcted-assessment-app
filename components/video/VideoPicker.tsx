@@ -5,11 +5,12 @@ import {
   TouchableOpacity,
   TextInput,
   ScrollView,
-  Image,
   KeyboardAvoidingView,
   Platform,
+  Alert,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
+import * as Linking from 'expo-linking';
 import { Ionicons } from '@expo/vector-icons';
 import { formatDuration, formatFileSize } from '@utils/formatters';
 
@@ -37,23 +38,39 @@ export function VideoPicker({ onVideoReady }: VideoPickerProps) {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [error, setError] = useState<string | null>(null);
-  const [permissionError, setPermissionError] = useState<string | null>(null);
 
   const descriptionInputRef = useRef<TextInput>(null);
 
   const clearErrors = () => {
     setError(null);
-    setPermissionError(null);
   };
 
   /**
    * Handles the scenario where media library permissions are denied.
-   * Sets a specific error message guiding the user to system settings.
+   * Shows an alert guiding the user to system settings.
    */
   const handlePermissionDenied = useCallback(() => {
     clearErrors();
-    setPermissionError(
-      `${ERROR_MESSAGES.PERMISSION_DENIED} Please open your device settings to grant permissions.`
+    Alert.alert(
+      'Media Library Access Denied',
+      ERROR_MESSAGES.PERMISSION_DENIED,
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Open Settings',
+          onPress: () => {
+            if (Platform.OS === 'ios') {
+              Linking.openURL('app-settings:');
+            } else {
+              Linking.openSettings();
+            }
+          },
+        },
+      ],
+      { cancelable: false }
     );
   }, []);
 
@@ -124,12 +141,7 @@ export function VideoPicker({ onVideoReady }: VideoPickerProps) {
     return (
       <View className="flex-1 items-center justify-center bg-gray-900 p-6">
         <Text className="mb-8 text-center text-3xl font-bold text-white">Select a Video</Text>
-        {permissionError && (
-          <View className="mb-4 rounded-md bg-red-500 p-3">
-            <Text className="text-center text-white">{permissionError}</Text>
-          </View>
-        )}
-        {error && !permissionError && (
+        {error && (
           <View className="mb-4 rounded-md bg-red-500 p-3">
             <Text className="text-center text-white">{error}</Text>
           </View>

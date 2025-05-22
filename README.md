@@ -9,8 +9,8 @@ To run the app locally, follow these steps:
 1.  **Clone the repository:**
 
     ```bash
-    git clone <repository-url>
-    cd <repository-name>
+    git clone https://github.com/oi-narendra/insepcted-assessment-app
+    cd insepcted-assessment-app
     ```
 
 2.  **Install dependencies:**
